@@ -1,0 +1,58 @@
+metadata:
+  name: ultralytics-yolov8
+  namespace: cvat
+  annotations:
+    name: YOLO v8
+    type: detector
+    framework: pytorch
+    spec: |
+      [
+        { "id": 0, "name": "Bounce" },
+        { "id": 1, "name": "Player_1" },
+        { "id": 2, "name": "Player_2" },
+        { "id": 3, "name": "Ball" }
+      ]
+
+spec:
+  description: YOLO v8 custom
+  runtime: 'python:3.9'
+  handler: main:handler
+  eventTimeout: 30s
+  build:
+    image: cvat.ultralytics-yolov8
+    baseImage: python:3.9.16 #yolo8-baseimage #python:3.9.16 #ultralytics/yolov8:latest-cpu
+    #commands:
+    #  - pip install ultralytics==8.0.69
+    #  - pip install Pillow==9.5.0
+    #  - pip install torch==2.0.0
+    #  - pip install numpy==1.23.5
+
+    directives:
+      preCopy:
+        - kind: USER
+          value: root
+        - kind: RUN
+          value: apt update && apt install --no-install-recommends -y libglib2.0-0 && apt install --no-install-recommends -y libgl1-mesa-dev
+        - kind: RUN
+          value: pip install ultralytics==8.0.69
+        - kind: RUN
+          value: pip install Pillow==9.5.0
+        - kind: RUN
+          value: pip install numpy==1.23.5
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 1000000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
